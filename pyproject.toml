@@ -1,10 +1,10 @@
 [tool.poetry]
-name = "ipython-gpt"
+name = "gpt-magic"
 version = "0.0.5"
 description = "A Jupyter/IPython extension to use ChatGPT"
 authors = ["Santiago Basulto <santiago.basulto@gmail.com>"]
 readme = "README.md"
-homepage = "https://github.com/santiagobasulto/ipython-gpt"
+homepage = "https://github.com/tristanheywood/gpt-magic.git"
 repository = "https://github.com/santiagobasulto/ipython-gpt"
 keywords = ["ipython", "jupyter", "chatgpt", "openai"]
 classifiers = [

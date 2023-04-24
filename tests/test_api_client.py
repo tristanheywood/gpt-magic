@@ -2,7 +2,7 @@ import json
 from http.client import HTTPSConnection
 from unittest.mock import Mock, patch
 
-from ipython_gpt.api_client import OpenAIClient
+from gpt_magic.api_client import OpenAIClient
 
 
 def test_api_client_auth():

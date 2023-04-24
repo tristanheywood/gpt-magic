@@ -1,7 +1,7 @@
 from unittest.mock import MagicMock, patch
 
-from ipython_gpt.api_client import OpenAIClient
-from ipython_gpt.subcommands import ChatCommand
+from gpt_magic.api_client import OpenAIClient
+from gpt_magic.subcommands import ChatCommand
 
 
 def test_basic_chat_command():
