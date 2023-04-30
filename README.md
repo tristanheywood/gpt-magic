@@ -142,3 +142,10 @@ Usage:
 Aside from setting the environment variable, you can also set `OPENAI_API_KEY` as a global variable in your notebook, or pass it directly as a parameter in any method `--openai-api-key=YOUR-KEY`.
 
 These alternative methods are NOT recommended, as you might leak your API Key in the notebooks' history, stored in `.ipynb_checkpoints`.
+
+## Development
+
+
+```
+poetry install
+```

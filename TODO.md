@@ -1,0 +1,13 @@
+- [ ] Stream GPT responses, so the interface feels more responsive
+  - https://github.com/openai/openai-cookbook/blob/main/examples/How_to_stream_completions.ipynb
+- [ ] Add Bing chat as an optional model, to help with tasks which require searching the internet.
+  - https://github.com/transitive-bullshit/bing-chat/ works by reverse engineering the Bing sidebar, but uses nodejs.
+- [ ] Better conversation management
+  - Allow for multiple concurrent conversations, which will be enumerated like A, B, C, ..., AA
+  - Allow the user to specify which conversation to folloup using the --followup option
+     - E.g. -fB to followup on conversation B
+  - Enumerate each GPT message in each conversation, e.g. C1, C2, C3.
+     - Allow the user to --followup a specific message, e.g. -fC2 to followup on message C2. This will reset all subsequent messages on conversation C.
+  - When displaying a GPT output, display the conversation and message number, e.g. A1, B2, C3. Similar to IPython displaying cell input and output number.
+- [ ] Provide a "--pass" option to 'pass' the previous cell content and output to GPT, as context for the user's question. E.g. call `df.columns` to show GPT the column names, then ask for a code snippet that requires knowledge of the column names.
+  - Followup: Figure out how to pass standard out as well. %%capture captures stdout and puts it into a variable. This is a possible avenue but has friction.
