@@ -143,9 +143,40 @@ Aside from setting the environment variable, you can also set `OPENAI_API_KEY` a
 
 These alternative methods are NOT recommended, as you might leak your API Key in the notebooks' history, stored in `.ipynb_checkpoints`.
 
-## Development
+# Development
 
 
 ```
 poetry install
 ```
+
+## Developing with Jupyter
+
+### Create a ipython kernel inside the gpt-magic poetry venv
+
+```
+# create a virtualenv
+poetry shell
+# install dependencies
+poetry install 
+# install ipykernel in the poetry env - but without making it a dependency.
+pip install ipykernel 
+# create an ipython kernel inside the poetry env
+python -m ipykernel install --user --name=gpt_magic_kernel
+```
+
+Then open a jupyter notebook and select this kernel.
+
+### Notebook setup
+
+In the first notebook cell put:
+
+```
+%load_ext gpt_magic
+%reload_ext gpt_magic
+
+%load_ext autoreload
+%autoreload 2
+```
+
+So that changes to the extension are reloaded automatically.

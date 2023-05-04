@@ -11,3 +11,4 @@
   - When displaying a GPT output, display the conversation and message number, e.g. A1, B2, C3. Similar to IPython displaying cell input and output number.
 - [ ] Provide a "--pass" option to 'pass' the previous cell content and output to GPT, as context for the user's question. E.g. call `df.columns` to show GPT the column names, then ask for a code snippet that requires knowledge of the column names.
   - Followup: Figure out how to pass standard out as well. %%capture captures stdout and puts it into a variable. This is a possible avenue but has friction.
+- [ ] Make GPT queries run once and then store output. Possible implementation: Programmatically create a new markdown cell for the output, then comment out the %gpt call in the current cell. Note: I haven't found a good way to edit the current notebook programmatically.

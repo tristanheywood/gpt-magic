@@ -1,25 +1,53 @@
 import os
 
 from IPython.core.magic import Magics, cell_magic, line_magic, magics_class
+from .gpt_state import GPTMagicState
+from .gpt_command import gpt_command
 
 from .displays import get_registered_display
 from .subcommands import ChatCommand, ChatModelsBrowserCommand, ConfigCommand
 
+_state = GPTMagicState()
+
+def get_GPTMagicState():
+    return _state
 
 @magics_class
 class IPythonGPT(Magics):
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._context = {
-            "config": {
-                "openai_api_key": os.environ.get("OPENAI_API_KEY")
-                or globals().get("OPENAI_API_KEY"),
-                "default_model": "gpt-3.5-turbo",
-                "default_system_message": "You're a python data science coding assistant",
-            },
-            "message_history": [],
-        }
-        self.display = get_registered_display()
+        # self._context = {
+        #     "config": {
+        #         "openai_api_key":
+        #         os.environ.get("OPENAI_API_KEY")
+        #         or globals().get("OPENAI_API_KEY"),
+        #         "default_model":
+        #         "gpt-3.5-turbo",
+        #         "default_system_message":
+        #         "You are a python data science coding assistant",
+        #     },
+        #     "message_history": [],
+        # }
+        # self.display = get_registered_display()
+        self.state = _state
+
+    @cell_magic
+    @line_magic
+    def gpt(self, line, cell=None):
+        """
+        Invoke GPT on the given cell.
+
+        Run `%gpt --help` for more information.
+
+        Usage (cell mode only):
+          %%gpt <prompt>
+          %%gpt --login
+            Enter your OpenAI API Key.
+          %%gpt --code <prompt>
+            Generate executable Python code based on <prompt> and put in this cell.
+        """
+        gpt_command(self.state, line, cell)
 
     @cell_magic
     def chat(self, line, cell):
