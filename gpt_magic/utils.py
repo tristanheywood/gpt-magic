@@ -1,4 +1,6 @@
 from itertools import count, product
+import re
+from typing import Optional
 
 from IPython.core.getipython import get_ipython
 from operator import itemgetter
@@ -19,3 +21,17 @@ def excel_style_column_name_seq():
     for n in count(1):
         for x in product(*[capital_alphabet] * n):
             yield "".join(x)
+
+
+def maybe_find_backtick_block(s: str) -> Optional[str]:
+    """Find the last backtick block in a string, if any.
+    
+    Will return <content> in the cases ```\n<content>\n``` and ```python\n<content>\n```.
+    """
+
+    pattern = r"(?P<start>```python\n|```\n)(?P<code>.*?)(?P<end>\n```)"
+    matches = list(re.finditer(pattern, s, flags=re.DOTALL))
+    if len(matches) >= 1:
+        return matches[-1].group("code")
+    
+    return None

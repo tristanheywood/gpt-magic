@@ -1,8 +1,9 @@
 from dataclasses import dataclass
 from itertools import chain, count, product, zip_longest
+import re
 from typing import Dict, List, Optional, Tuple, Union
 
-from .utils import excel_style_column_name_seq
+from .utils import excel_style_column_name_seq, maybe_find_backtick_block
 
 from .api_client import OpenAIClient
 
@@ -86,8 +87,25 @@ REQUEST:
 
     def get_code(self, msg_idx: int = -1):
         msg = self.assistant_messages[msg_idx]
-        code = msg.split(_CODE_START_MARKER)[1].split(_CODE_END_MARKER)[0]
-        return code
+
+        pattern = fr'{_CODE_START_MARKER}\s*(.*?)\s*{_CODE_END_MARKER}'
+        matches = re.findall(pattern, msg, flags=re.DOTALL)
+
+        # code = msg.split(_CODE_START_MARKER)[1].split(_CODE_END_MARKER)
+        if len(matches) >= 1:
+            code = matches[0]
+            # GPT may ignore our instruction not to wrap the code in backticks.
+            bt_block = maybe_find_backtick_block(code)
+            return bt_block if bt_block is not None else code
+
+        # GPT has ignored our instructions, attempt to recover some code from the cell,
+        # by looking for a block like '```[python]<code>```'
+        bt_block = maybe_find_backtick_block(msg)
+        if bt_block is not None:
+            return bt_block
+
+        outp = "FAILED TO EXTRACT CODE.\nFull GPT Response:\n" + msg
+        return "\n".join(["#" + line for line in outp.split("\n")])
 
     def truncate_to(self, n: int):
         self.user_messages = self.user_messages[: n + 1]

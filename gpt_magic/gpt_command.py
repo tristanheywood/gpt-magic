@@ -48,8 +48,10 @@ def _parse_args(line):
     parser.add_argument(
         "--show",
         "-s",
-        action="store_true",
         help="Show the previous cell(s) inputs and outputs to GPT, to provide context for the prompt. Note: only cell outputs are passed, not stdout.",
+        nargs="?",
+        const="",
+        default=None,
     )
     parser.add_argument(
         "--debug",
@@ -90,6 +92,9 @@ def _parse_args(line):
         if args.followup is not None:
             args.prompt = args.followup
             args.followup = ""
+        elif args.show is not None:
+            args.prompt = args.show
+            args.show = ""
 
     return args
 
@@ -218,8 +223,9 @@ def gpt_command(state: GPTMagicState, line, cell=None):
     followup_key = (convo_key, msg_key)
 
     ipy_history = []
-    if args.show:
-        ipy_history = get_ipython_history()
+    if args.show is not None:
+        last_n = 1 if args.show == "" else int(args.show)
+        ipy_history = get_ipython_history(last_n)
 
     convo = state.get_convo(followup_key)
     convo.add_prompt(args.prompt, args.code, ipy_history)
