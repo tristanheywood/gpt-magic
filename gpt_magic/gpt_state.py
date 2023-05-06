@@ -3,7 +3,9 @@ from itertools import chain, count, product, zip_longest
 import re
 from typing import Dict, List, Optional, Tuple, Union
 
-from .utils import excel_style_column_name_seq, maybe_find_backtick_block
+from openai import ChatCompletion
+
+from .utils import calls_oai_api, excel_style_column_name_seq, maybe_find_backtick_block
 
 from .api_client import OpenAIClient
 
@@ -63,19 +65,39 @@ REQUEST:
             self.system_message = f"You are a helpful Python data science coding assistant. You are helping the user to write code which runs in a Jupyter notebook cell. If the user asks you to do something, interpret this as a request to provide code which does that thing. For example if the user asks for the time, you should provide code which prints the current time. At the end of each response you must include a block which starts with '{_CODE_START_MARKER}' (followed by a newline) and ends with '{_CODE_END_MARKER}'. This block should contain the code which you want to put in the IPython cell. Only valid, executable Python code should appear between these two markers. No backticks."
         self.user_messages.append(prompt)
 
-    def do_completion(self, client, model, temperature=None, max_tokens=None):
-        json_body = {
+    @calls_oai_api
+    def do_completion(
+        self, model, temperature=None, max_tokens=None, stream: bool = False
+    ):
+        kwargs = {
             "model": model,
             "messages": self.to_messages(),
+            "temperature": temperature,
+            "max_tokens": max_tokens,
         }
+        api_resp = ChatCompletion.create(**kwargs, stream=stream)
 
-        if temperature:
-            json_body["temperature"] = temperature
-        if max_tokens:
-            json_body["max_tokens"] = max_tokens
+        if stream:
+            partial_resp = ""
+            for chunk in api_resp:
+                partial_resp += chunk['choices'][0]['delta'].get("content", "")
+                yield partial_resp
+            chat_response = partial_resp
+        else:
+            chat_response = api_resp["choices"][0]["message"]["content"]
 
-        resp = client.request("POST", "/chat/completions", json_body=json_body)
-        chat_response = resp["choices"][0]["message"]["content"]
+        # json_body = {
+        #     "model": model,
+        #     "messages": self.to_messages(),
+        # }
+
+        # if temperature:
+        #     json_body["temperature"] = temperature
+        # if max_tokens:
+        #     json_body["max_tokens"] = max_tokens
+
+        # client = OpenAIClient()
+        # resp = client.request("POST", "/chat/completions", json_body=json_body)
         self.assistant_messages.append(chat_response)
 
     def get_message(self, msg_idx: int = -1):
@@ -88,7 +110,7 @@ REQUEST:
     def get_code(self, msg_idx: int = -1):
         msg = self.assistant_messages[msg_idx]
 
-        pattern = fr'{_CODE_START_MARKER}\s*(.*?)\s*{_CODE_END_MARKER}'
+        pattern = rf"{_CODE_START_MARKER}\s*(.*?)\s*{_CODE_END_MARKER}"
         matches = re.findall(pattern, msg, flags=re.DOTALL)
 
         # code = msg.split(_CODE_START_MARKER)[1].split(_CODE_END_MARKER)
@@ -114,7 +136,7 @@ REQUEST:
 
 @dataclass
 class GPTMagicState:
-    openai_api_key: Optional[str] = None
+    # openai_api_key: Optional[str] = None
     default_model: str = "gpt-3.5-turbo"
     default_system_message: str = "You are a python data science coding assistant"
     conversations = {}

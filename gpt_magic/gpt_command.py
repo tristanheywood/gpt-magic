@@ -1,10 +1,13 @@
 import argparse
+from time import time
 import re
 import shlex
 from getpass import getpass
 from typing import Dict, Optional
 
-from .utils import get_ipython_history
+from .utils import calls_oai_api, get_available_models, get_ipython_history
+
+from IPython.display import clear_output, display, Markdown
 
 from .gpt_state import GPTMagicState
 
@@ -16,12 +19,12 @@ from .api_client import OpenAIClient
 def _parse_args(line):
     parser = argparse.ArgumentParser(prog="%%gpt")
     parser.add_argument("prompt", nargs="?", default=None, help="Prompt for GPT.")
-    parser.add_argument(
-        "--login",
-        "-l",
-        action="store_true",
-        help="Provide your OpenAI API Key (required to use GPT).",
-    )
+    # parser.add_argument(
+    #     "--login",
+    #     "-l",
+    #     action="store_true",
+    #     help="Provide your OpenAI API Key (required to use GPT).",
+    # )
     # 3 State option: -f not present => args.folloup == None,
     # -f present => args.followup == "", -f present with value => args.followup == value
     parser.add_argument(
@@ -65,16 +68,16 @@ def _parse_args(line):
     #     help="Start a brand new conversation without previous context",
     #     action="store_true",
     # )
-    parser.add_argument(
-        "--temperature",
-        help="What sampling temperature to use, between 0 and 2. See OpenAI docs",
-        type=float,
-    )
-    parser.add_argument(
-        "--max-tokens",
-        help="The maximum number of tokens to generate in the chat completion.",
-        type=int,
-    )
+    # parser.add_argument(
+    #     "--temperature",
+    #     help="What sampling temperature to use, between 0 and 2. See OpenAI docs",
+    #     type=float,
+    # )
+    # parser.add_argument(
+    #     "--max-tokens",
+    #     help="The maximum number of tokens to generate in the chat completion.",
+    #     type=int,
+    # )
     # parser.add_argument(
     #     "--system-message",
     #     help=
@@ -152,16 +155,18 @@ def _parse_args(line):
 #     return chat_response, new_messages
 
 
-def _get_available_models(api_key: str):
-    client = OpenAIClient(api_key)
-    resp = client.request("GET", "/models")
-    models = [m["id"] for m in resp["data"] if m["id"].startswith("gpt")]
-    return models
+# @calls_oai_api
+# def _get_available_models(api_key: str):
+#     client = OpenAIClient(api_key)
+#     resp = client.request("GET", "/models")
+#     models = [m["id"] for m in resp["data"] if m["id"].startswith("gpt")]
+#     return models
 
 
-def _login_command(state: GPTMagicState):
-    state.openai_api_key = getpass("Enter your OpenAI API Key: ")
-    models = _get_available_models(state.openai_api_key)
+@calls_oai_api
+def _login_command():
+    # state.openai_api_key = getpass("Enter your OpenAI API Key: ")
+    models = get_available_models()
     formatted_models = "\n".join([f"\t- {model}" for model in models])
     return f"##### Available models:\n\n{formatted_models}"
 
@@ -186,11 +191,11 @@ def gpt_command(state: GPTMagicState, line, cell=None):
     if args.debug:
         print("Arguments:", args)
 
-    if state.openai_api_key is None or args.login:
-        ipy_display.display(_login_command(state))
+    # if state.openai_api_key is None or args.login:
+    #     ipy_display.display(_login_command(state))
 
     if args.model is not None:
-        avail_models = _get_available_models(state.openai_api_key)
+        avail_models = get_available_models()
         if args.model == "":
             print("Available models: ", *["• " + m for m in avail_models], sep="\n")
             return
@@ -204,7 +209,6 @@ def gpt_command(state: GPTMagicState, line, cell=None):
     else:
         model = state.default_model
 
-    client = OpenAIClient(state.openai_api_key)
     # messages = _get_messages(context,
     #                          args.prompt,
     #                          request_code=args.code,
@@ -237,7 +241,15 @@ def gpt_command(state: GPTMagicState, line, cell=None):
         print("Continuing conversation:", convo.get_message_key())
         ipy_display.display(convo.to_messages())
 
-    convo.do_completion(client, model, args.temperature, args.max_tokens)
+    t_last_update = time()
+    for partial_resp in convo.do_completion(model, stream=True):
+        clear_output(wait=True)
+        t_now = time()
+        # Update every 100 ms
+        if t_now - t_last_update > 0.1:
+            display(Markdown(partial_resp))
+            t_last_update = t_now
+    clear_output(wait=False)
 
     # gpt_resp, new_history = _get_response(messages, context, client,
     #                                       args.temperature, args.max_tokens)

@@ -10,6 +10,7 @@ from .subcommands import ChatCommand, ChatModelsBrowserCommand, ConfigCommand
 _state = GPTMagicState()
 
 def get_GPTMagicState():
+    global _state
     return _state
 
 @magics_class
@@ -30,7 +31,7 @@ class IPythonGPT(Magics):
         #     "message_history": [],
         # }
         # self.display = get_registered_display()
-        self.state = _state
+        self.state = get_GPTMagicState()
 
     @cell_magic
     @line_magic

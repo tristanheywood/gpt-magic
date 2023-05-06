@@ -1,5 +1,19 @@
 # IPython ChatGPT extension
 
+## Usage
+
+Run `%gpt --help`.
+
+To modify the internal state of the extension:
+
+```
+from gpt_magic import get_GPTMagicState
+gm_state = get_GPTMagicState()
+```
+
+You can then use `state` to manually manage your conversations with GPT, and manage 
+advanced options such as max_tokens, temperature, etc.
+
 [![Black badge](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![prettier badge](https://img.shields.io/badge/code_style-prettier-ff69b4.svg?logo=prettier&logoColor=white)](https://github.com/prettier/prettier)
 [![pre-commit](https://img.shields.io/badge/pre--commit-active-yellow?logo=pre-commit&logoColor=white)](https://pre-commit.com/)4

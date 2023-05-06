@@ -1,9 +1,14 @@
+from functools import wraps
+from getpass import getpass
+from inspect import isgeneratorfunction
 from itertools import count, product
 import re
 from typing import Optional
 
 from IPython.core.getipython import get_ipython
 from operator import itemgetter
+import openai
+from openai.error import AuthenticationError
 
 
 def get_ipython_history(last_n: int = 1):
@@ -25,7 +30,7 @@ def excel_style_column_name_seq():
 
 def maybe_find_backtick_block(s: str) -> Optional[str]:
     """Find the last backtick block in a string, if any.
-    
+
     Will return <content> in the cases ```\n<content>\n``` and ```python\n<content>\n```.
     """
 
@@ -33,5 +38,33 @@ def maybe_find_backtick_block(s: str) -> Optional[str]:
     matches = list(re.finditer(pattern, s, flags=re.DOTALL))
     if len(matches) >= 1:
         return matches[-1].group("code")
-    
+
     return None
+
+
+def calls_oai_api(f):
+    """Decorator for methods that call the OpenAI API.
+
+    Returns a wrapper which calls `f`. If `f` fails with `AuthenticationError`, the
+    wrapper will prompt the user for their API key and try again.
+    """
+
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        try:
+            if isgeneratorfunction(f):
+                yield from f(*args, **kwargs)
+            else:
+                return f(*args, **kwargs)
+        except AuthenticationError:
+            api_key = getpass("Please enter your OpenAI API key: ")
+            openai.api_key = api_key
+            return f(*args, **kwargs)
+
+    return wrapper
+
+
+@calls_oai_api
+def get_available_models():
+    resp = openai.Model.list()
+    return [m["id"] for m in resp["data"] if m["id"].startswith("gpt")]
